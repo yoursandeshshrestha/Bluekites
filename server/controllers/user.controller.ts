@@ -6,7 +6,7 @@ import ErrorHandler from "../utils/ErrorHandler";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import ejs from "ejs";
 import path from "path";
-import bcrypt from "bcryptjs";
+// import bcrypt from "bcryptjs";
 import sendMail from "../utils/sendMail";
 import {
   accessTokenOptions,

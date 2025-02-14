@@ -22,10 +22,14 @@ exports.app.use(express_1.default.json({ limit: "50mb" }));
 // cookie parser
 exports.app.use((0, cookie_parser_1.default)());
 // cors => cors origin resource sharing
+const allowedOrigins = process.env.ORIGIN ? process.env.ORIGIN.split(",") : [];
 exports.app.use((0, cors_1.default)({
-    origin: ["http://localhost:3000"],
+    origin: allowedOrigins,
     credentials: true,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept, Authorization",
 }));
+exports.app.options("*", (0, cors_1.default)()); // Handle preflight requests
 // api request limit
 const limiter = (0, express_rate_limit_1.rateLimit)({
     windowMs: 15 * 60 * 1000,
@@ -36,7 +40,7 @@ const limiter = (0, express_rate_limit_1.rateLimit)({
 // routers
 exports.app.use("/api/v1", user_route_1.default, course_route_1.default, order_route_1.default, notification_route_1.default, analytics_route_1.default, layout_route_1.default);
 // testing api
-exports.app.get("/test", (req, res, next) => {
+exports.app.get("/", (req, res, next) => {
     res.status(200).json({
         success: true,
         message: "API is working",

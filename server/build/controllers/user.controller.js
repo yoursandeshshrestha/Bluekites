@@ -4,13 +4,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteUser = exports.updateUserRole = exports.getAllUsers = exports.updateProfilePicture = exports.updatePassword = exports.updateUserInfo = exports.socialAuth = exports.getUserInfo = exports.updateAccessToken = exports.logoutUser = exports.loginUser = exports.activateUser = exports.createActivationToken = exports.registrationUser = void 0;
-require('dotenv').config();
+require("dotenv").config();
 const user_model_1 = __importDefault(require("../models/user.model"));
 const catchAsyncErrors_1 = require("../middleware/catchAsyncErrors");
 const ErrorHandler_1 = __importDefault(require("../utils/ErrorHandler"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const ejs_1 = __importDefault(require("ejs"));
 const path_1 = __importDefault(require("path"));
+// import bcrypt from "bcryptjs";
 const sendMail_1 = __importDefault(require("../utils/sendMail"));
 const jwt_1 = require("../utils/jwt");
 const redis_1 = require("../utils/redis");
@@ -24,7 +25,9 @@ exports.registrationUser = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, r
             return next(new ErrorHandler_1.default("Email already exist", 400));
         }
         const user = {
-            name, email, password
+            name,
+            email,
+            password,
         };
         const activationToken = (0, exports.createActivationToken)(user);
         const activationCode = activationToken.activationCode;
@@ -54,9 +57,10 @@ exports.registrationUser = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, r
 const createActivationToken = (user) => {
     const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
     const token = jsonwebtoken_1.default.sign({
-        user, activationCode
+        user,
+        activationCode,
     }, process.env.ACTIVATION_SECRET, {
-        expiresIn: "5m"
+        expiresIn: "5m",
     });
     return { token, activationCode };
 };
@@ -74,7 +78,9 @@ exports.activateUser = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, res, 
             return next(new ErrorHandler_1.default("Email already exist", 400));
         }
         const user = await user_model_1.default.create({
-            name, email, password
+            name,
+            email,
+            password,
         });
         res.status(201).json({
             success: true,
@@ -115,7 +121,7 @@ exports.logoutUser = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, res, ne
         redis_1.redis.del(userId);
         res.status(200).json({
             success: true,
-            message: "Logged out successfully"
+            message: "Logged out successfully",
         });
     }
     catch (error) {
@@ -129,7 +135,7 @@ exports.updateAccessToken = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, 
     try {
         const refresh_token = req.cookies.refresh_token;
         const decoded = jsonwebtoken_1.default.verify(refresh_token, process.env.REFRESH_TOKEN);
-        const message = 'Could not refresh token';
+        const message = "Could not refresh token";
         if (!decoded) {
             return next(new ErrorHandler_1.default(message, 400));
         }
@@ -139,10 +145,10 @@ exports.updateAccessToken = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, 
         }
         const user = JSON.parse(session);
         const accessToken = jsonwebtoken_1.default.sign({ id: user._id }, process.env.ACCESS_TOKEN, {
-            expiresIn: "5m"
+            expiresIn: "5m",
         });
         const refreshToken = jsonwebtoken_1.default.sign({ id: user._id }, process.env.REFRESH_TOKEN, {
-            expiresIn: "3d"
+            expiresIn: "3d",
         });
         req.user = user;
         res.cookie("access_token", accessToken, jwt_1.accessTokenOptions);
@@ -166,20 +172,25 @@ exports.getUserInfo = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, res, n
         return next(new ErrorHandler_1.default(error.message, 400));
     }
 });
-exports.socialAuth = (0, catchAsyncErrors_1.CatchAsyncError)(// Ekspor fungsi socialAuth dengan penggunaan middleware CatchAsyncError
+exports.socialAuth = (0, catchAsyncErrors_1.CatchAsyncError)(
+// Ekspor fungsi socialAuth dengan penggunaan middleware CatchAsyncError
 async (req, res, next) => {
+    // Definisi fungsi socialAuth yang menerima tiga parameter: req (Request), res (Response), dan next (NextFunction)
     try {
         const { email, name, avatar } = req.body; // Mendapatkan email, name, dan avatar dari objek req.body dan memastikan bahwa tipe datanya sesuai dengan ISocialAuthBody
         const user = await user_model_1.default.findOne({ email }); // Mencari pengguna berdasarkan alamat email
-        if (!user) { // Jika pengguna tidak ditemukan
+        if (!user) {
+            // Jika pengguna tidak ditemukan
             const newUser = await user_model_1.default.create({ email, name, avatar }); // Buat pengguna baru dengan informasi yang diberikan
             (0, jwt_1.sendToken)(newUser, 200, res); // Kirim token untuk pengguna baru
         }
-        else { // Jika pengguna sudah ada
+        else {
+            // Jika pengguna sudah ada
             (0, jwt_1.sendToken)(user, 200, res); // Kirim token untuk pengguna yang sudah ada
         }
     }
-    catch (error) { // Menangkap kesalahan apa pun yang mungkin terjadi
+    catch (error) {
+        // Menangkap kesalahan apa pun yang mungkin terjadi
         return next(new ErrorHandler_1.default(error.message, 400)); // Memanggil middleware next dengan objek error yang dibuat menggunakan ErrorHandler dan kode status 400
     }
 });
@@ -202,7 +213,7 @@ exports.updateUserInfo = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, res
         await redis_1.redis.set(userId, JSON.stringify(user));
         res.status(201).json({
             success: true,
-            user
+            user,
         });
     }
     catch (error) {
@@ -229,7 +240,7 @@ exports.updatePassword = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, res
         await redis_1.redis.set(req.user?._id, JSON.stringify(user));
         res.status(201).json({
             success: true,
-            user
+            user,
         });
     }
     catch (error) {
@@ -251,21 +262,21 @@ exports.updateProfilePicture = (0, catchAsyncErrors_1.CatchAsyncError)(async (re
                 await cloudinary_1.default.v2.uploader.destroy(user?.avatar?.public_id);
                 const myCloud = await cloudinary_1.default.v2.uploader.upload(avatar, {
                     folder: "avatars",
-                    width: 150
+                    width: 150,
                 });
                 user.avatar = {
                     public_id: myCloud.public_id,
-                    url: myCloud.secure_url
+                    url: myCloud.secure_url,
                 };
             }
             else {
                 const myCloud = await cloudinary_1.default.v2.uploader.upload(avatar, {
                     folder: "avatars",
-                    width: 150
+                    width: 150,
                 });
                 user.avatar = {
                     public_id: myCloud.public_id,
-                    url: myCloud.secure_url
+                    url: myCloud.secure_url,
                 };
             }
         }
@@ -273,7 +284,7 @@ exports.updateProfilePicture = (0, catchAsyncErrors_1.CatchAsyncError)(async (re
         await redis_1.redis.set(userId, JSON.stringify(user));
         res.status(201).json({
             success: true,
-            user
+            user,
         });
     }
     catch (error) {
@@ -301,7 +312,7 @@ exports.updateUserRole = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, res
         else {
             res.status(400).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
             });
         }
     }
@@ -321,7 +332,7 @@ exports.deleteUser = (0, catchAsyncErrors_1.CatchAsyncError)(async (req, res, ne
         await redis_1.redis.del(id);
         res.status(201).json({
             success: true,
-            message: "User deleted successfully"
+            message: "User deleted successfully",
             // message: `ini adalah ${id}`
         });
     }
