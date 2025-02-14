@@ -25,8 +25,13 @@ app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders:
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization",
   })
 );
+
+app.options("*", cors()); // Handle preflight requests
 
 // api request limit
 const limiter = rateLimit({
