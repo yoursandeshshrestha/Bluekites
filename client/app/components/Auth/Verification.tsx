@@ -1,41 +1,40 @@
-import { styles } from '@/app/styles/styles';
-import { useActivationMutation } from '@/redux/features/auth/authApi';
-import React, { FC, useEffect, useRef, useState } from 'react'
-import { toast } from 'react-hot-toast'
-import { VscWorkspaceTrusted } from 'react-icons/vsc'
-import { useSelector } from 'react-redux';
+import React, { FC, useEffect, useRef, useState } from "react";
+import { useActivationMutation } from "@/redux/features/auth/authApi";
+import { toast } from "react-hot-toast";
+import { ShieldCheck } from "lucide-react";
+import { useSelector } from "react-redux";
 
 type Props = {
   setRoute: (route: string) => void;
-}
+};
 
 type VerifyNumber = {
   "0": string;
   "1": string;
   "2": string;
   "3": string;
-}
+};
 
 const Verification: FC<Props> = ({ setRoute }) => {
-  const { token } = useSelector((state: any) => state.auth)
-  const [activation, { isSuccess, error }] = useActivationMutation()
-  const [invalidError, setInvalidError] = useState(false)
+  const { token } = useSelector((state: any) => state.auth);
+  const [activation, { isSuccess, error }] = useActivationMutation();
+  const [invalidError, setInvalidError] = useState(false);
 
   useEffect(() => {
     if (isSuccess) {
-      toast.success("Account activated successfully")
-      setRoute("Login")
-    };
+      toast.success("Account activated successfully");
+      setRoute("Login");
+    }
     if (error) {
       if ("data" in error) {
-        const errorData = error as any
-        toast.error(errorData.data.message)
-        setInvalidError(true)
+        const errorData = error as any;
+        toast.error(errorData.data.message);
+        setInvalidError(true);
       } else {
-        console.log("An error occured:", error)
+        console.log("An error occurred:", error);
       }
     }
-  }, [isSuccess, error])
+  }, [isSuccess, error]);
 
   const inputRefs = [
     useRef<HTMLInputElement>(null),
@@ -49,86 +48,107 @@ const Verification: FC<Props> = ({ setRoute }) => {
     1: "",
     2: "",
     3: "",
-  })
+  });
 
   const verificationHandler = async () => {
-    const verificationNumber = Object.values(verifyNumber).join("")
+    const verificationNumber = Object.values(verifyNumber).join("");
     if (verificationNumber.length !== 4) {
-      setInvalidError(true)
-      return
+      setInvalidError(true);
+      return;
     }
     await activation({
       activation_token: token,
-      activation_code: verificationNumber
-    })
-  }
+      activation_code: verificationNumber,
+    });
+  };
 
   const handleInputChange = (index: number, value: string) => {
-    setInvalidError(false)
-    const newVerifyNumber = { ...verifyNumber, [index]: value }
-    setVerifyNumber(newVerifyNumber)
+    // Only allow single digit
+    const sanitizedValue = value.slice(-1);
 
-    if (value === "" && index > 0) {
-      inputRefs[index - 1].current?.focus()
-    } else if (value.length === 1 && index < 3) {
-      inputRefs[index + 1].current?.focus()
+    setInvalidError(false);
+    const newVerifyNumber = { ...verifyNumber, [index]: sanitizedValue };
+    setVerifyNumber(newVerifyNumber);
+
+    if (sanitizedValue === "" && index > 0) {
+      inputRefs[index - 1].current?.focus();
+    } else if (sanitizedValue.length === 1 && index < 3) {
+      inputRefs[index + 1].current?.focus();
     }
-  }
+  };
 
   return (
-    <div>
-      <h1
-        className={`${styles.title}`}
-      >
-        Verify your Account
-      </h1>
-      <br />
-      <div className='w-full flex items-center justify-center mt-2'>
-        <div className='w-[80px] h-[80px] rounded-full bg-[#497DF2] flex items-center justify-center'>
-          <VscWorkspaceTrusted size={40} />
+    <div className="w-full max-w-md mx-auto p-6">
+      <div className="text-center space-y-6">
+        {/* Header */}
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Verify your Account
+        </h1>
+
+        {/* Icon */}
+        <div className="flex justify-center">
+          <div className="w-20 h-20 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+            <ShieldCheck className="w-10 h-10 text-white" />
+          </div>
         </div>
-      </div>
-      <br />
-      <br />
-      <div className='m-auto flex items-center justify-around'>
-        {Object.keys(verifyNumber).map((key, index) => (
-          <input type="number"
-            key={key}
-            ref={inputRefs[index]}
-            className={`w-[65px] h-[65px] bg-transparent border-[3px] rounded-[10px] flex items-center text-black dark:text-white justify-center text-[18px] font-Poopins outline-none text-center ${invalidError
-              ? "shake border-red-500"
-              : "dark:border-white border-[#0000004a]"
-              }`}
-            placeholder=''
-            maxLength={1}
-            value={verifyNumber[key as keyof VerifyNumber]}
-            onChange={(e) => handleInputChange(index, e.target.value)}
-          />
-        ))}
-      </div>
-      <br />
-      <br />
-      <div className='w-full flex justify-center'>
+
+        {/* Description */}
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          Please enter the verification code sent to your email
+        </p>
+
+        {/* OTP Input Fields */}
+        <div className="flex gap-3 justify-center my-8">
+          {Object.keys(verifyNumber).map((key, index) => (
+            <input
+              key={key}
+              ref={inputRefs[index]}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={verifyNumber[key as keyof VerifyNumber]}
+              onChange={(e) => handleInputChange(index, e.target.value)}
+              className={`w-16 h-16 text-center text-2xl font-semibold 
+                bg-white dark:bg-gray-800 
+                rounded-lg border-2 outline-none transition-all duration-200
+                ${
+                  invalidError
+                    ? "border-red-500 dark:border-red-500"
+                    : "border-gray-300 dark:border-gray-600"
+                }
+                focus:border-blue-500 dark:focus:border-blue-400
+                focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20
+                text-gray-900 dark:text-white`}
+            />
+          ))}
+        </div>
+
+        {/* Verify Button */}
         <button
-          className={`${styles.button}`}
           onClick={verificationHandler}
+          className="w-full py-3 px-4 text-sm font-medium text-white 
+            bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600
+            rounded-lg transition-colors duration-200
+            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+            disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Verify OTP
         </button>
+
+        {/* Sign In Link */}
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          Go back to sign in?{" "}
+          <button
+            onClick={() => setRoute("Login")}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 
+              font-medium transition-colors duration-200"
+          >
+            Sign in
+          </button>
+        </p>
       </div>
-      <br />
-      <h5
-        className='text-center pt-4 font-Poppins text-[14px] text-black dark:text-white'
-      >
-        Go back to sign in?
-        <span
-          className='text-[#2190ff] pl-1 cursor-pointer'
-          onClick={() => setRoute("Login")}
-        >
-          Sign in
-        </span>
-      </h5>
     </div>
-  )
-}
-export default Verification
+  );
+};
+
+export default Verification;

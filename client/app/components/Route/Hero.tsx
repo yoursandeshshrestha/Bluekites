@@ -1,27 +1,23 @@
 "use client";
-import { styles } from "@/app/styles/styles";
-import {
-  useEditLayoutMutation,
-  useGetHeroDataQuery,
-} from "@/redux/features/layout/layoutApi";
-import React, { FC, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { AiOutlineCamera } from "react-icons/ai";
-import Loader from "../Loader";
+import { useGetHeroDataQuery } from "@/redux/features/layout/layoutApi";
 import { useRouter } from "next/navigation";
+import { FC, useEffect, useState } from "react";
 import { BiSearch } from "react-icons/bi";
+import { motion } from "framer-motion";
+import Loader from "../Loader";
 
 type Props = {};
 
-const Hero: FC<Props> = (props: Props) => {
+const Hero: FC<Props> = () => {
   const [image, setImage] = useState("");
   const [title, setTitle] = useState("");
   const [subTitle, setSubTitle] = useState("");
-  const { data, refetch, isLoading } = useGetHeroDataQuery("Banner", {
-    refetchOnMountOrArgChange: true,
-  });
   const [search, setSearch] = useState("");
   const router = useRouter();
+
+  const { data, isLoading } = useGetHeroDataQuery("Banner", {
+    refetchOnMountOrArgChange: true,
+  });
 
   useEffect(() => {
     if (data) {
@@ -32,58 +28,125 @@ const Hero: FC<Props> = (props: Props) => {
   }, [data]);
 
   const handleSearch = () => {
-    if (search === "") {
-      return;
-    } else {
-      router.push(`/courses?title=${search}`);
+    if (search.trim()) {
+      router.push(`/courses?title=${encodeURIComponent(search.trim())}`);
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  if (isLoading) return <Loader />;
+
   return (
-    <>
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <div className="w-full 1000px:flex items-center">
-          <div className="absolute top-[100px] 1000px:top-[unset] 1500px:h-[700px] 1500px:w-[700px] 1100px:h-[500px] 1100px:w-[500px] h-[50vh] w-[50vh] hero_animation rounded-[50%] 1100px:left-[5rem] 1500px:left-[10rem]"></div>
-          <div className="1000px:w-[40%] flex 1000px:min-h-screen items-center justify-end pt-[70px] 1000px:pt-[0] z-10">
-            <div className="relative flex items-center justify-end">
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] dark:opacity-[0.05]" />
+
+      {/* Hero Container */}
+      <div className="relative container mx-auto px-4 py-8 lg:py-0">
+        <div className="flex flex-col lg:flex-row items-center justify-between min-h-screen gap-8 lg:gap-4">
+          {/* Content Section */}
+          <div className="w-full lg:w-[60%] flex flex-col items-center lg:items-start text-center lg:text-left space-y-8 pt-20 lg:pt-0">
+            {/* Title with highlight effect */}
+            <div className="relative">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="font-Poppins text-4xl md:text-5xl lg:text-6xl xl:text-7xl 
+                         font-bold leading-tight text-gray-900 dark:text-white"
+              >
+                {/* Add proper word spacing */}
+                {"Tomorrow it was a dream, Today it's an achievement"
+                  .split("  ")
+                  .map((word, index) => (
+                    <span
+                      key={index}
+                      className="inline-block hover:text-[#39c1f3] transition-colors duration-300"
+                    >
+                      {word}
+                      {index !==
+                        "Tomorrow it was a dream, Today it's an achievement".split(
+                          " "
+                        ).length -
+                          1 && " "}
+                    </span>
+                  ))}
+              </motion.h1>
+              <div className="absolute -bottom-2 left-0 w-24 h-1 bg-[#39c1f3]" />
+            </div>
+
+            {/* Search Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="w-full max-w-2xl"
+            >
+              <div className="relative group">
+                <input
+                  type="text"
+                  placeholder="Search Courses..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="w-full h-16 px-6 rounded-xl
+                           bg-white dark:bg-gray-800 
+                           border-2 border-gray-100 dark:border-gray-700
+                           text-gray-900 dark:text-white text-lg
+                           placeholder:text-gray-400 dark:placeholder:text-gray-500
+                           focus:border-[#39c1f3] dark:focus:border-[#39c1f3]
+                           outline-none
+                           transition-all duration-300
+                           shadow-sm hover:shadow-md"
+                />
+                <button
+                  onClick={handleSearch}
+                  className="absolute right-2 top-2 
+                           h-12 px-8
+                           bg-[#39c1f3] hover:bg-[#2bb1e8]
+                           text-white font-medium
+                           rounded-lg
+                           flex items-center gap-2
+                           transition-all duration-300
+                           transform hover:scale-105"
+                >
+                  <BiSearch className="text-2xl" />
+                  <span className="hidden sm:inline">Search</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Image Section */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+            className="w-full lg:w-[40%] flex justify-center lg:justify-end"
+          >
+            <div className="relative w-full max-w-xl">
+              {/* Image Decoration */}
+              <div className="absolute -inset-4 bg-[#39c1f3] opacity-5 blur-xl rounded-full" />
+              <div className="absolute -inset-4 bg-grid-pattern opacity-10 dark:opacity-20" />
+
               <img
                 src={image}
-                alt=""
-                className="object-contain 1100px:max-w-[190%] w-[190%] 1500px:max-w-[185%] h-[auto] z-[10]"
+                alt="Hero"
+                className="relative w-full h-auto object-contain
+                         rounded-2xl
+                         transform hover:scale-105 hover:rotate-1
+                         transition-all duration-500 ease-out"
               />
             </div>
-          </div>
-          <div className="1000px:w-[60%] pl-[250px] pr-[150px] flex flex-col items-center 1000px:mt-[0px] text-center 1000px:text-left mt-[150px]">
-            <p className="px-10 focus:outline-none dark:text-white text-black w-full font-[600] text-[30px] 1000px:text-[60px] 1500px:text-[70px] bg-transparent resize-none">
-              {title}
-            </p>
-            <br />
-            {/* <p className="px-10 focus:outline-none dark:text-white text-black w-full font-[600] text-[8px] 1000px:text-[15px] 1500px:text-[20px] bg-transparent resize-none">
-              {subTitle}
-            </p> */}
-            <br />
-            <br />
-            <div className="ml-[-320px] 1500px:w-[55%] 1100px:w-[78%] w-[90%] h-[50px] bg-transparent relative">
-              <input
-                type="text"
-                placeholder="Search Courses..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="bg-transparent border dark:border-none dark:bg-[#575757] dark:placeholder:text-[#ffffffdd] rounded-[5px] p-2 w-full h-full outline-none text-black dark:text-white"
-              />
-              <div
-                className="absolute flex items-center justify-center w-[50px] cursor-pointer h-[50px] right-0 top-0 bg-[#39c1f3] rounded-r-[5px]"
-                onClick={handleSearch}
-              >
-                <BiSearch className="text-white" size={30} />
-              </div>
-            </div>
-          </div>
+          </motion.div>
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 };
 

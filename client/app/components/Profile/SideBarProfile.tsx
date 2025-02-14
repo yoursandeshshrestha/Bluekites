@@ -1,89 +1,123 @@
-import React, { FC } from 'react'
-import avatarDefault from "../../../public/assets/avatar.jpg"
-import Image from 'next/image'
-import { RiLockPasswordLine } from "react-icons/ri"
-import { SiCoursera } from "react-icons/si"
-import { AiOutlineLogout } from "react-icons/ai"
-import { MdOutlineAdminPanelSettings } from "react-icons/md"
-import Link from 'next/link'
+import React, { FC } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  UserCircle,
+  KeyRound,
+  BookOpen,
+  LogOut,
+  ShieldCheck,
+} from "lucide-react";
+import avatarDefault from "../../../public/assets/avatar.jpg";
 
 type Props = {
-    user: any
-    active: number
-    avatar: string | null
-    setActive: (active: number) => void
-    logoutHandler: any
-}
+  user: any;
+  active: number;
+  avatar: string | null;
+  setActive: (active: number) => void;
+  logoutHandler: () => void;
+};
 
-const SideBarProfile: FC<Props> = ({ user, active, avatar, setActive, logoutHandler }) => {
+const SideBarProfile: FC<Props> = ({
+  user,
+  active,
+  avatar,
+  setActive,
+  logoutHandler,
+}) => {
+  const menuItems = [
+    {
+      id: 1,
+      label: "My Account",
+      icon: UserCircle,
+      onClick: () => setActive(1),
+    },
+    {
+      id: 2,
+      label: "Change Password",
+      icon: KeyRound,
+      onClick: () => setActive(2),
+    },
+    {
+      id: 3,
+      label: "Enrolled Courses",
+      icon: BookOpen,
+      onClick: () => setActive(3),
+    },
+    ...(user.role === "admin"
+      ? [
+          {
+            id: 6,
+            label: "Admin Dashboard",
+            icon: ShieldCheck,
+            isLink: true,
+            href: "/admin",
+          },
+        ]
+      : []),
+    {
+      id: 4,
+      label: "Logout",
+      icon: LogOut,
+      onClick: logoutHandler,
+    },
+  ];
+
+  const renderMenuItem = (item: any) => {
+    const className = `w-full flex items-center gap-3 px-4 py-3 rounded-lg
+      transition-colors duration-200
+      ${
+        active === item.id
+          ? "bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400"
+          : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+      }`;
+
+    if (item.isLink) {
+      return (
+        <Link href={item.href} className={className}>
+          <item.icon className="w-5 h-5" />
+          <span className="font-medium">{item.label}</span>
+        </Link>
+      );
+    }
+
     return (
-        <div className='w-full'>
-            <div
-                className={`w-full flex items-center px-3 py-4 cursor-pointer ${active === 1 ? "dark:bg-slate-800 bg-white" : "bg-transparent"
-                    }`}
-                onClick={() => setActive(1)}
-            >
-                <Image
-                    src={user.avatar || avatar ? user.avatar.url || avatar : avatarDefault}
-                    alt=''
-                    className='w-[20px] h-[20px] object-cover 800px:w-[30px] 800px:h-[30px] cursor-pointer rounded-full'
-                    width={20}
-                    height={20}
-                />
-                <h5
-                    className='pl-2 800px:block hidden font-Poppins dark:text-white text-black'
-                >
-                    My Account
+      <button onClick={item.onClick} className={className}>
+        <item.icon className="w-5 h-5" />
+        <span className="font-medium">{item.label}</span>
+      </button>
+    );
+  };
 
-                </h5>
-            </div>
-            <div
-                className={`w-full flex items-center px-3 py-4 cursor-pointer ${active === 2 ? "dark:bg-slate-800 bg-white" : "bg-transparent"
-                    }`}
-                onClick={() => setActive(2)}
-            >
-                <RiLockPasswordLine size={20} className='dark:text-white text-black' />
-                <h5
-                    className='pl-2 800px:block hidden font-Poppins dark:text-white text-black'
-                >Change Password</h5>
-            </div>
-            <div
-                className={`w-full flex items-center px-3 py-4 cursor-pointer ${active === 3 ? "dark:bg-slate-800 bg-white" : "bg-transparent"
-                    }`}
-                onClick={() => setActive(3)}
-            >
-                <SiCoursera size={20} className='dark:text-white text-black' />
-                <h5
-                    className='pl-2 800px:block hidden font-Poppins dark:text-white text-black'
-                >Enrolled Courses</h5>
-            </div>
-            {
-                user.role === "admin" &&
-                (
-                    <Link
-                        className={`w-full flex items-center px-3 py-4 cursor-pointer ${active === 6 ? "dark:bg-slate-800 bg-white" : "bg-transparent"
-                            }`}
-                        href={"/admin"}
-                    >
-                        <MdOutlineAdminPanelSettings size={20} className='dark:text-white text-black' />
-                        <h5
-                            className='pl-2 800px:block hidden font-Poppins dark:text-white text-black'
-                        >Admin Dashboard</h5>
-                    </Link>
-                )
-            }
-            <div
-                className={`w-full flex items-center px-3 py-4 cursor-pointer ${active === 4 ? "dark:bg-slate-800 bg-white" : "bg-transparent"
-                    }`}
-                onClick={() => logoutHandler()}
-            >
-                <AiOutlineLogout size={20} className='dark:text-white text-black' />
-                <h5
-                    className='pl-2 800px:block hidden font-Poppins dark:text-white text-black'
-                >Logout</h5>
-            </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 px-4">
+        <div className="relative w-12 h-12">
+          <Image
+            src={user.avatar?.url || avatar || avatarDefault}
+            alt={user.name || "User"}
+            className="rounded-full object-cover"
+            fill
+            sizes="48px"
+          />
         </div>
-    )
-}
+        <div>
+          <h3 className="font-medium text-gray-900 dark:text-white">
+            {user.name}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {user.role}
+          </p>
+        </div>
+      </div>
 
-export default SideBarProfile
+      <div className="space-y-1">
+        {menuItems.map((item) => (
+          <div key={item.id}>{renderMenuItem(item)}</div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default SideBarProfile;

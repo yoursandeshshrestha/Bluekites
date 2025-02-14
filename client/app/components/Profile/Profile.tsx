@@ -22,21 +22,14 @@ const Profile: FC<Props> = ({ user }) => {
   const [active, setActive] = useState(1);
 
   const { data, isLoading } = useGetUsersAllCoursesQuery(undefined, {});
-  const {} = useLogoutQuery(undefined, {
-    skip: !logout,
-  });
+  const {} = useLogoutQuery(undefined, { skip: !logout });
 
-  // Handle scroll events
   useEffect(() => {
-    const handleScroll = () => {
-      setScroll(window.scrollY > 85);
-    };
-
+    const handleScroll = () => setScroll(window.scrollY > 85);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Handle course data
   useEffect(() => {
     if (data) {
       const filteredCourses = user.courses
@@ -53,7 +46,7 @@ const Profile: FC<Props> = ({ user }) => {
       setLogout(true);
       await signOut({ redirect: false });
       router.push("/");
-      window.location.reload(); // Force reload the page
+      window.location.reload();
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -63,28 +56,33 @@ const Profile: FC<Props> = ({ user }) => {
     switch (active) {
       case 1:
         return (
-          <div className="w-full h-full bg-transparent mt-[80px]">
+          <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <ProfileInfo avatar={avatar} user={user} />
           </div>
         );
       case 2:
         return (
-          <div className="w-full h-full bg-transparent mt-[80px]">
+          <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <ChangePassword />
           </div>
         );
       case 3:
         return (
-          <div className="w-full pl-7 px-2 800px:px-10 mt-[80px] 800px:pl-8">
-            <div className="grid grid-cols-1 gap-[20px] md:grid-cols-2 md:gap-[25px] lg:grid-cols-2 lg:gap-[25px] xl:grid-cols-3 xl:gap-[35px]">
+          <div className="w-full p-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {courses.map((item: any, index: number) => (
                 <CourseCard item={item} key={index} isProfile={true} />
               ))}
             </div>
             {courses.length === 0 && (
-              <h1 className="text-center text-[18px] font-Poppins">
-                You don&apos;t have any purchased courses!
-              </h1>
+              <div className="text-center py-8">
+                <h2 className="text-xl font-medium text-gray-900 dark:text-white">
+                  No Courses Found
+                </h2>
+                <p className="mt-2 text-gray-600 dark:text-gray-300">
+                  You haven't enrolled in any courses yet.
+                </p>
+              </div>
             )}
           </div>
         );
@@ -94,21 +92,31 @@ const Profile: FC<Props> = ({ user }) => {
   };
 
   return (
-    <div className="w-[85%] flex mx-auto">
-      <div
-        className={`w-[60px] 800px:w-[310px] h-[450px] dark:bg-slate-900 bg-white bg-opacity-90 border dark:border-[#ffffff1d] border-[#00000014] rounded-[5px] shadow-sm dark:shadow-sm mt-[80px] mb-[80px] sticky ${
-          scroll ? "top-[120px]" : "top-[30px]"
-        } left-[30px]`}
-      >
-        <SideBarProfile
-          user={user}
-          active={active}
-          avatar={avatar}
-          setActive={setActive}
-          logoutHandler={logoutHandler}
-        />
+    <div className="max-w-7xl mx-auto px-4 py-8 pt-[150px]">
+      <div className="flex flex-col lg:flex-row gap-8">
+        <aside className="w-full lg:w-64 flex-shrink-0">
+          <div
+            className={`sticky ${
+              scroll ? "top-24" : "top-8"
+            } transition-all duration-200`}
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+              <SideBarProfile
+                user={user}
+                active={active}
+                avatar={avatar}
+                setActive={setActive}
+                logoutHandler={logoutHandler}
+              />
+            </div>
+          </div>
+        </aside>
+        <main className="flex-1">
+          <div className="transition-all duration-200 ease-in-out">
+            {renderContent()}
+          </div>
+        </main>
       </div>
-      {renderContent()}
     </div>
   );
 };
