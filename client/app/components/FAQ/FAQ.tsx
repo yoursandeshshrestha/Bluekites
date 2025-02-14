@@ -126,8 +126,8 @@ const FAQ = () => {
       <div className="mt-12 text-center bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-8 rounded-xl">
         <h3 className="text-xl font-semibold mb-4">Still have questions?</h3>
         <p className="text-gray-600 dark:text-gray-300 mb-6">
-          Can't find the answer you're looking for? Please get in touch with our
-          friendly team.
+          Can&apos;t find the answer you&apos;re looking for? Please get in
+          touch with our friendly team.
         </p>
         <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium transition-colors">
           Contact Support

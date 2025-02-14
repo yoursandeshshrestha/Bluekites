@@ -42,8 +42,8 @@ const About = () => {
         <section>
           <h2 className="text-3xl font-bold mb-4">About Us</h2>
           <p className="text-lg leading-relaxed">
-            Regardless of a person's location, our goal at Blue Kites is to make
-            education interesting, approachable, and life-changing for
+            Regardless of a person&apos;s location, our goal at Blue Kites is to
+            make education interesting, approachable, and life-changing for
             everybody. We are committed to closing the gaps in education and
             technology that exist in rural regions so that every student may
             succeed. Our platform offers a comprehensive approach to learning
@@ -92,7 +92,7 @@ const About = () => {
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <p className="text-lg">
-                Education is about more than earning good grades; it's also
+                Education is about more than earning good grades; it&apos;s also
                 about being creative and growing yourself. For this reason, Blue
                 Kites provides an extensive selection of courses that meet the
                 needs of students at all skill levels, including advanced skills
@@ -136,9 +136,9 @@ const About = () => {
             compromised by cost. For this reason, we provide a special pricing
             structure that only requires a single purchase and gives lifetime
             access to our vast course collection. With this strategy, students
-            won't have to worry about paying recurring fees or signing up for
-            subscriptions and may continue to access and utilize our services
-            for the rest of their life.
+            won&apos;t have to worry about paying recurring fees or signing up
+            for subscriptions and may continue to access and utilize our
+            services for the rest of their life.
           </p>
         </section>
 

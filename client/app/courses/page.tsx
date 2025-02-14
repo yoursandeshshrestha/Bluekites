@@ -3,7 +3,7 @@
 import { useGetUsersAllCoursesQuery } from "@/redux/features/courses/courseApi";
 import { useGetHeroDataQuery } from "@/redux/features/layout/layoutApi";
 import { useSearchParams } from "next/navigation";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, Suspense } from "react";
 import Loader from "../components/Loader";
 import Header from "../components/Header";
 import Heading from "../utils/Heading";
@@ -39,11 +39,32 @@ const ErrorMessage = ({ message }: { message: string }) => (
   </div>
 );
 
-const CoursesPage = () => {
+const CategoryButton = ({
+  id,
+  title,
+  isSelected,
+  onClick,
+}: {
+  id: string;
+  title: string;
+  isSelected: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    className={`h-[35px] ${
+      isSelected ? "bg-[crimson]" : "bg-[#5050cb]"
+    } m-3 px-3 rounded-[30px] text-white font-Poppins hover:opacity-90 transition-opacity`}
+    onClick={onClick}
+  >
+    {title}
+  </button>
+);
+
+// Create a separate component for the courses content
+function CoursesContent() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams?.get("title")?.toLowerCase() || "";
 
-  // API queries with proper error handling
   const {
     data: coursesData,
     isLoading: isCoursesLoading,
@@ -89,25 +110,6 @@ const CoursesPage = () => {
     [categoriesData]
   );
 
-  const CategoryButton = ({
-    id,
-    title,
-    isSelected,
-  }: {
-    id: string;
-    title: string;
-    isSelected: boolean;
-  }) => (
-    <button
-      className={`h-[35px] ${
-        isSelected ? "bg-[crimson]" : "bg-[#5050cb]"
-      } m-3 px-3 rounded-[30px] text-white font-Poppins hover:opacity-90 transition-opacity`}
-      onClick={() => setCategory(id)}
-    >
-      {title}
-    </button>
-  );
-
   if (coursesError || categoriesError) {
     return (
       <ErrorMessage message="Failed to load courses. Please try again later." />
@@ -137,6 +139,7 @@ const CoursesPage = () => {
             id="All"
             title="All"
             isSelected={category === "All"}
+            onClick={() => setCategory("All")}
           />
           {categories.map((item: Category) => (
             <CategoryButton
@@ -144,6 +147,7 @@ const CoursesPage = () => {
               id={item._id}
               title={item.title}
               isSelected={category === item._id}
+              onClick={() => setCategory(item._id)}
             />
           ))}
         </div>
@@ -172,6 +176,15 @@ const CoursesPage = () => {
 
       <Footer />
     </div>
+  );
+}
+
+// Main page component
+const CoursesPage = () => {
+  return (
+    <Suspense fallback={<Loader />}>
+      <CoursesContent />
+    </Suspense>
   );
 };
 
