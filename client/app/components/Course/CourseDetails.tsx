@@ -1,298 +1,364 @@
-import { styles } from "@/app/styles/styles";
-import CoursePlayer from "@/app/utils/CoursePlayer";
-import Ratings from "@/app/utils/Ratings";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { format } from "timeago.js";
-import React, { useEffect, useState } from "react";
+import { Elements } from "@stripe/react-stripe-js";
 import {
   IoMdCheckmarkCircleOutline,
   IoMdCloseCircleOutline,
 } from "react-icons/io";
-import { useSelector } from "react-redux";
+import { VscVerifiedFilled } from "react-icons/vsc";
+import { Stripe } from "@stripe/stripe-js";
+
+import { styles } from "@/app/styles/styles";
+import CoursePlayer from "@/app/utils/CoursePlayer";
+import Ratings from "@/app/utils/Ratings";
 import ContentCourseList from "./ContentCourseList";
-import { Elements } from "@stripe/react-stripe-js";
 import CheckOutForm from "../Payment/CheckOutForm";
 import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
-import Image from "next/image";
 import defaultImage from "../../../public/assets/avatar.jpg";
-import { VscVerifiedFilled } from "react-icons/vsc";
 
-type Props = {
-  data: any;
+// Define all necessary interfaces
+interface UserCourse {
+  _id: string;
+  // Add other course properties as needed
+}
+
+interface User {
+  _id: string;
+  name: string;
+  avatar?: {
+    url: string;
+  };
+  role?: string;
+  courses?: UserCourse[];
+}
+
+interface Review {
+  user: User;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  commentReplies: Array<{
+    user: User;
+    comment: string;
+    createdAt: string;
+  }>;
+}
+
+interface CourseLink {
+  title: string;
+  url: string;
+  _id: string;
+}
+
+interface CourseData {
+  videoUrl: string;
+  title: string;
+  videoSection: string;
+  description: string;
+  videoLength: number;
+  links: CourseLink[];
+  suggestion?: string;
+  questions: any[]; // Define a proper interface if needed
+  _id: string;
+}
+
+interface Course {
+  _id: string;
+  name: string;
+  title?: string;
+  description: string;
+  price: number;
+  estimatedPrice: number;
+  demoUrl: string;
+  ratings: number;
+  purchased: number;
+  thumbnail: {
+    public_id: string;
+    url: string;
+  };
+  level: string;
+  tags: string;
+  benefits: Array<{ title: string; _id: string }>;
+  prerequisites: Array<{ title: string; _id: string }>;
+  courseData: CourseData[];
+  reviews: Review[];
+}
+
+interface CourseDetailsProps {
+  data: Course;
   clientSecret: string;
-  stripePromise: any;
-  setRoute: any;
-  setOpen: any;
+  stripePromise: Promise<Stripe | null>;
+  setRoute: (route: string) => void;
+  setOpen: (open: boolean) => void;
+}
+
+// Format price in Indian Rupees
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(price);
 };
 
-const CourseDetails = ({
+const CourseDetails: React.FC<CourseDetailsProps> = ({
   data,
   clientSecret,
   stripePromise,
   setRoute,
   setOpen: openAuthModal,
-}: Props) => {
-  const [open, setOpen] = useState(false);
-  // const { user } = useSelector((state: any) => state.auth);
+}) => {
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const { data: userData } = useLoadUserQuery(undefined, {});
-  const [user, setUser] = useState<any>();
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    setUser(userData?.user);
+    if (userData?.user) {
+      setUser(userData.user);
+    }
   }, [userData]);
 
-  const discountprecentange =
-    ((data?.setimatedPrice - data?.price) / data?.estimatedPrice) * 100;
-
-  const discountPercentengePrice = discountprecentange.toFixed(0);
+  const discountPercentage = Math.round(
+    ((data.estimatedPrice - data.price) / data.estimatedPrice) * 100
+  );
 
   const isPurchased =
-    user && user?.courses?.find((item: any) => item._id === data._id);
+    user?.courses?.some((course) => course._id === data._id) ?? false;
 
-  const handleOrder = (e: any) => {
+  const handlePurchase = () => {
     if (user) {
-      setOpen(true);
+      setCheckoutOpen(true);
     } else {
       setRoute("Login");
       openAuthModal(true);
     }
   };
 
-  return (
-    <div>
-      <div className="w-[90%] 800px:w-[90%] m-auto py-5">
-        <div className="w-full flex flex-col-reverce 800px:flex-row">
-          <div className="w-full 800px:w-[65%] 800px:pr-[50px]">
-            <h1 className="text-[25px] font-Poppins font-[600] text-black dark:text-white">
-              {data?.name}
-            </h1>
-            <div className="flex items-center justify-between pt-3">
-              <div className="flex items-center">
-                <Ratings rating={data.ratings} />
-                <h5 className="text-black dark:text-white">
-                  {data.reviews?.length} Reviews
-                </h5>
-              </div>
-              <h5 className="text-black dark:text-white">
-                {data.purchased} Students
-              </h5>
-            </div>
+  // Sub-components with proper typing
+  const CourseSection: React.FC<{
+    title: string;
+    children: React.ReactNode;
+  }> = ({ title, children }) => (
+    <div className="mb-8">
+      <h2 className="text-2xl font-semibold font-Poppins mb-4 text-black dark:text-white">
+        {title}
+      </h2>
+      {children}
+    </div>
+  );
 
-            <br />
-            <h1 className="text-[25px] font-Poppins font-[600] text-black dark:text-white">
-              What you will learn form this course?
-            </h1>
-            <div>
-              {data.benefits?.map((item: any, index: number) => (
-                <div
-                  className="w-full flex 800px:items-center py-2"
-                  key={index}
-                >
-                  <div className="w-[15px] mr-1">
-                    <IoMdCheckmarkCircleOutline
-                      size={20}
-                      className="text-black dark:text-white"
-                    />
-                  </div>
-                  <p className="pl-2 text-black dark:text-white">
-                    {item.title}
-                  </p>
-                </div>
-              ))}
-              <br />
-              <br />
-            </div>
-            <h1 className="text-[25px] font-Poppins font-[600] text-black dark:text-white">
-              What are the prerequisites for starting this course?
-            </h1>
-            <div>
-              {data.prerequisites?.map((item: any, index: number) => (
-                <div
-                  className="w-full flex 800px:items-center py-2"
-                  key={index}
-                >
-                  <div className="w-[15px] mr-1">
-                    <IoMdCheckmarkCircleOutline
-                      size={20}
-                      className="text-black dark:text-white"
-                    />
-                  </div>
-                  <p className="pl-2 text-black dark:text-white">
-                    {item.title}
-                  </p>
-                </div>
-              ))}
-              <br />
-              <br />
-            </div>
-            <div>
-              <h1 className="text-[25px] font-Poppins font-[600] text-black dark:text-white">
-                Course Overview
-              </h1>
-              <ContentCourseList data={data?.courseData} isDemo={true} />
-              <div className="w-full">
-                <h1 className="text-[25px] font-Poppins font-[600] text-black dark:text-white">
-                  Course Details
-                </h1>
-                <p className="text-[18px] mt-[20px] whitespace-pre-line w-full overflow-hidden text-black dark:text-white">
-                  {data.description}
-                </p>
-              </div>
-              <br />
-              <br />
-              <div className="w-full">
-                <div className="800px:flex items-center">
-                  <Ratings rating={data?.ratings} />
-                  <div className="mb-2 800px:mb-[unset]">
-                    <h5 className="text-[25px] font-Poppins text-black dark:text-white">
-                      {Number.isInteger(data?.ratings)
-                        ? data?.ratings.toFixed(1)
-                        : data?.ratings.toFixed(2)}{" "}
-                      Course Rating * {data?.reviews?.length} Reviews
-                    </h5>
-                  </div>
-                </div>
-                <br />
-                {(data?.reviews && [...data.reviews].reverse()).map(
-                  (item: any, index: number) => (
-                    <div className="w-full pb-4" key={index}>
-                      <div className="flex">
-                        <div className="w-[50px] h-[50px]">
-                          <Image
-                            src={
-                              item.user.avatar
-                                ? item.user.avatar.url
-                                : defaultImage
-                            }
-                            width={50}
-                            height={50}
-                            alt=""
-                            className="w-[50px] h-[50px] rounded-full object-cover"
-                          />
-                        </div>
-                        <div className="hidden 800px:block pl-2">
-                          <div className="flex items-center">
-                            <h5 className="text-[18px] pr-2 text-black dark:text-white">
-                              {item.user.name}
-                            </h5>
-                            <Ratings rating={item.rating} />
-                          </div>
-                          <p className="text-black dark:text-white">
-                            {item.comment}
-                          </p>
-                          <small className="text-[#000000d1] dark:text-[#ffffff83]">
-                            {format(item.createdAt)}
-                          </small>
-                        </div>
-                        <div className="pl-2 flex 800px:hidden items-center">
-                          <h5 className="text-[18px] pr-2 text-black dark:text-white">
-                            <Ratings rating={item.rating} />
-                          </h5>
-                        </div>
-                      </div>
-                      {item.commentReplies.map((i: any, index: number) => (
-                        <div
-                          className="w-full flex 800px:ml-16 my-5"
-                          key={index}
-                        >
-                          <div className="w-[50px] h-[50px]">
-                            <Image
-                              src={
-                                i.user.avatar ? i.user.avatar.url : defaultImage
-                              }
-                              width={50}
-                              height={50}
-                              alt=""
-                              className="w-[50px] h-[50px] rounded-full object-cover"
-                            />
-                          </div>
-                          <div className="pl-2">
-                            <div className="flex items-center">
-                              <h5 className="text-[20px]">{i.user.name}</h5>
-                              {i.user.role === "admin" && (
-                                <VscVerifiedFilled className="text-[#0095f6] ml-2 text-[20px]" />
-                              )}
-                            </div>
-                            <p>{i.comment}</p>
-                            <small className="text-[#ffffff83]">
-                              {format(i.createdAt)}
-                            </small>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )
+  const BenefitItem: React.FC<{ title: string }> = ({ title }) => (
+    <div className="flex items-center py-2">
+      <IoMdCheckmarkCircleOutline
+        size={20}
+        className="text-black dark:text-white"
+      />
+      <p className="pl-2 text-black dark:text-white">{title}</p>
+    </div>
+  );
+
+  const ReviewCard: React.FC<{ review: Review }> = ({ review }) => (
+    <div className="w-full pb-4">
+      <div className="flex">
+        <Image
+          src={review.user.avatar?.url || defaultImage}
+          width={50}
+          height={50}
+          alt={`${review.user.name}'s avatar`}
+          className="w-[50px] h-[50px] rounded-full object-cover"
+        />
+        <div className="pl-2 flex-1">
+          <div className="flex items-center">
+            <h5 className="text-lg font-medium text-black dark:text-white mr-2">
+              {review.user.name}
+            </h5>
+            <Ratings rating={review.rating} />
+          </div>
+          <p className="text-black dark:text-white my-1">{review.comment}</p>
+          <small className="text-gray-600 dark:text-gray-400">
+            {format(review.createdAt)}
+          </small>
+        </div>
+      </div>
+
+      {review.commentReplies.map((reply, index) => (
+        <div key={index} className="ml-16 mt-4">
+          <div className="flex">
+            <Image
+              src={reply.user.avatar?.url || defaultImage}
+              width={40}
+              height={40}
+              alt={`${reply.user.name}'s avatar`}
+              className="w-[40px] h-[40px] rounded-full object-cover"
+            />
+            <div className="pl-2 flex-1">
+              <div className="flex items-center">
+                <h5 className="text-base font-medium text-black dark:text-white">
+                  {reply.user.name}
+                </h5>
+                {reply.user.role === "admin" && (
+                  <VscVerifiedFilled className="text-blue-500 ml-2 text-lg" />
                 )}
               </div>
+              <p className="text-black dark:text-white my-1">{reply.comment}</p>
+              <small className="text-gray-600 dark:text-gray-400">
+                {format(reply.createdAt)}
+              </small>
             </div>
           </div>
-          <div className="w-full 800px:w-[35%] relative">
-            <div className="sticky top-[100px] left-0 z-50 w-full">
-              <CoursePlayer videoUrl={data?.demoUrl} title={data?.title} />
-              <div className="flex items-center">
-                <h1 className="pl-5 text-[25px] text-black dark:text-white">
-                  {data.price === 0 ? "Free" : data.price + "$"}
-                </h1>
-                <h5 className="pl-5 pt-4 text-[22px] text-black dark:text-white">
-                  {data.estimatedPrice}% Off
-                </h5>
-              </div>
-              <div className="flex items-center">
-                {isPurchased ? (
-                  <Link
-                    className={`${styles.button} !w-[180px] my-3 font-Poppins cursor-pointer !bg-[crimson]`}
-                    href={`/course-access/${data._id}`}
-                  >
-                    Enter to Course
-                  </Link>
-                ) : (
-                  <div
-                    className={`${styles.button} !w-[180px] my-3 font-Poppins cursor-pointer !bg-[crimson]`}
-                    onClick={handleOrder}
-                  >
-                    Buy Now {data.price}$
-                  </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8 pt-[100px]">
+      {/* Course Header Section */}
+      <div className="mb-8">
+        <div className="relative w-full h-[500px] rounded-xl overflow-hidden mb-6">
+          <Image
+            src={data.thumbnail.url}
+            alt={data.name}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-4 mb-4">
+          <h1 className="text-3xl font-bold text-black dark:text-white">
+            {data.name}
+          </h1>
+        </div>
+        <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300">
+          <span>Level: {data.level}</span>
+          <span>Tags: {data.tags}</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        <div className="w-full lg:w-2/3">
+          <CourseSection title="What you will learn">
+            {data.benefits?.map((item) => (
+              <BenefitItem key={item._id} title={item.title} />
+            ))}
+          </CourseSection>
+
+          <CourseSection title="Prerequisites">
+            {data.prerequisites?.map((item) => (
+              <BenefitItem key={item._id} title={item.title} />
+            ))}
+          </CourseSection>
+
+          <CourseSection title="Course Overview">
+            <ContentCourseList data={data.courseData} isDemo={true} />
+          </CourseSection>
+
+          <CourseSection title="Course Details">
+            <p className="text-lg whitespace-pre-line text-black dark:text-white">
+              {data.description}
+            </p>
+          </CourseSection>
+
+          <CourseSection title="Reviews">
+            <div className="flex items-center gap-4 mb-6">
+              <Ratings rating={data.ratings} />
+              <span className="text-black dark:text-white">
+                ({data.reviews.length} Reviews)
+              </span>
+            </div>
+            {data.reviews
+              .slice()
+              .reverse()
+              .map((review, index) => (
+                <ReviewCard key={index} review={review} />
+              ))}
+          </CourseSection>
+        </div>
+
+        <div className="w-full lg:w-1/3">
+          <div className="sticky top-24 space-y-6">
+            <CoursePlayer
+              videoUrl={data.demoUrl}
+              title={data.title || data.name}
+            />
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-3xl font-bold text-black dark:text-white">
+                  {data.price === 0 ? "Free" : formatPrice(data.price)}
+                </span>
+                {data.price !== data.estimatedPrice && (
+                  <span className="text-xl text-gray-500 line-through">
+                    {formatPrice(data.estimatedPrice)}
+                  </span>
+                )}
+                {discountPercentage > 0 && (
+                  <span className="text-green-500 font-medium">
+                    {discountPercentage}% off
+                  </span>
                 )}
               </div>
-              <br />
-              <p className="pb-1 text-black dark:text-white">
-                * Source doce included
-              </p>
-              <p className="pb-1 text-black dark:text-white">
-                * Source doce included
-              </p>
-              <p className="pb-1 text-black dark:text-white">
-                * Source doce included
-              </p>
-              <p className="pb-1 800px:pb-1 text-black dark:text-white">
-                * Source doce included
-              </p>
+
+              {isPurchased ? (
+                <Link
+                  href={`/course-access/${data._id}`}
+                  className={`${styles.button} w-full text-center`}
+                >
+                  Go to Course
+                </Link>
+              ) : (
+                <button
+                  onClick={handlePurchase}
+                  className={`${styles.button} w-full`}
+                >
+                  Buy Now {formatPrice(data.price)}
+                </button>
+              )}
+
+              <ul className="mt-6 space-y-2">
+                <li className="flex items-center gap-2 text-black dark:text-white">
+                  <IoMdCheckmarkCircleOutline className="text-green-500" />
+                  Lifetime Access
+                </li>
+                <li className="flex items-center gap-2 text-black dark:text-white">
+                  <IoMdCheckmarkCircleOutline className="text-green-500" />
+                  Source Code Included
+                </li>
+                <li className="flex items-center gap-2 text-black dark:text-white">
+                  <IoMdCheckmarkCircleOutline className="text-green-500" />
+                  Certificate of Completion
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
-      <>
-        {open && (
-          <div className="w-full h-screen bg-[#00000036] fixed top-0 left-0 z-50 flex items-center justify-center">
-            <div className="w-[500px] min-h-[420px] bg-white rounded-xl shadow p-3">
-              <div className="w-full flex justify-end">
-                <IoMdCloseCircleOutline
-                  size={40}
-                  className="text-black cursor-pointer"
-                  onClick={() => setOpen(false)}
-                />
-              </div>
-              <div className="w-full">
-                {stripePromise && clientSecret && (
-                  <Elements stripe={stripePromise} options={{ clientSecret }}>
-                    <CheckOutForm setOpen={setOpen} data={data} user={user} />
-                  </Elements>
-                )}
-              </div>
+
+      {checkoutOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+            <div className="flex justify-end">
+              <button
+                onClick={() => setCheckoutOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <IoMdCloseCircleOutline size={30} />
+              </button>
             </div>
+            {stripePromise && clientSecret && (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <CheckOutForm
+                  setOpen={setCheckoutOpen}
+                  data={data}
+                  user={user}
+                />
+              </Elements>
+            )}
           </div>
-        )}
-      </>
+        </div>
+      )}
     </div>
   );
 };

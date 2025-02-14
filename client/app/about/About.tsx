@@ -80,7 +80,10 @@ const About = () => {
             communication is sometimes impeded in traditional educational
             environments, making pupils reluctant to voice their opinions or ask
             questions. We remove these obstacles at Blue Kites by creating a
-            welcoming, cooperative, and helpful learning environment.
+            welcoming, cooperative, and helpful learning environment. With the
+            aid of our platform, educators may serve as mentors and
+            collaborators with students on their learning path, instilling a
+            sense of worth, self-assurance, and motivation to study.
           </p>
         </section>
 
@@ -111,6 +114,21 @@ const About = () => {
           </div>
         </section>
 
+        {/* Knowledge for Everyone Section */}
+        <section>
+          <h2 className="text-3xl font-bold mb-4">
+            Knowledge for Everyone, Limitless Possibilities
+          </h2>
+          <p className="text-lg leading-relaxed">
+            Our guiding principle of Blue Kites is that knowledge should be
+            accessible to all. We are dedicated to removing obstacles from the
+            way, be they social, economic, or geographic, so that every student
+            can achieve. Our platform is a movement committed to ensuring that
+            education is inclusive, transformative, and available to everyone,
+            not merely an online learning platform.
+          </p>
+        </section>
+
         {/* Empowering Teachers Section */}
         <section>
           <h2 className="text-3xl font-bold mb-4">
@@ -122,7 +140,10 @@ const About = () => {
             local educators the support and resources they require to thrive,
             Blue Kites aims to alter that. We recognize the skill of
             neighbourhood tutors and provide them with a platform to spread
-            their message and have a big influence on their communities.
+            their message and have a big influence on their communities. We are
+            investing in the future of education and making sure that
+            high-quality education is available to everyone by assisting local
+            educators.
           </p>
         </section>
 
@@ -138,7 +159,9 @@ const About = () => {
             access to our vast course collection. With this strategy, students
             won&apos;t have to worry about paying recurring fees or signing up
             for subscriptions and may continue to access and utilize our
-            services for the rest of their life.
+            services for the rest of their life. We at Blue Kites believe that
+            everyone should have access to ongoing education, regardless of
+            their financial circumstances.
           </p>
         </section>
 
@@ -151,8 +174,43 @@ const About = () => {
             inclusivity, and creativity—particularly in rural areas. No matter
             where they live or how much money they make, everyone should have
             access to high-quality education and technology in order to close
-            the achievement gap.
+            the achievement gap. In addition to helping them succeed
+            academically, we want to raise a generation of kids who are
+            inquisitive, self-assured, and creative thinkers. Through this
+            approach, we enable learners and local educators to surmount
+            conventional obstacles, cultivating a milieu in which knowledge is
+            freely exchanged without constraints and where indigenous talents
+            can flourish alongside multinational corporations.
           </p>
+          <p className="text-lg leading-relaxed mt-4">
+            We envision a future where every learner has the freedom to explore,
+            grow, and achieve, and where education becomes the key to unlocking
+            boundless opportunities for all.
+          </p>
+        </section>
+
+        {/* Mission Section */}
+        <section className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-8 rounded-2xl">
+          <h2 className="text-3xl font-bold mb-4">Our Mission</h2>
+          <ul className="space-y-4 text-lg leading-relaxed list-disc pl-6">
+            <li>
+              Provide an easy-to-use platform that enables lifetime,
+              cost-effective access to an extensive array of innovative and
+              instructional courses, thereby enabling learning for everybody,
+              particularly in remote regions.
+            </li>
+            <li>
+              Enable local educators to compete internationally, share their
+              expertise, and leave a lasting impression on their communities by
+              giving them a platform.
+            </li>
+            <li>
+              Establish transparent and encouraging communication between
+              teachers and students to create a collaborative learning
+              atmosphere in which students feel comfortable participating and
+              learning.
+            </li>
+          </ul>
         </section>
 
         {/* Leadership Team Section */}
@@ -185,9 +243,9 @@ const About = () => {
         <section className="text-center bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-8 rounded-2xl">
           <h2 className="text-3xl font-bold mb-4">Join Our Mission</h2>
           <p className="text-lg mb-6">
-            Help us bring education, opportunity, and empowerment to every
-            corner of the world. Together, we can create a future where
-            knowledge truly has no limits.
+            Join us in our mission to bring education, opportunity, and
+            empowerment to every corner of the world. Together, we can create a
+            future where knowledge truly has no limits.
           </p>
           <button className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-semibold transition-colors">
             Get Started Today
