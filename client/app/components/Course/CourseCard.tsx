@@ -20,11 +20,11 @@ const PriceTag = ({
     <div className="flex items-center">
       <Tag className="w-4 h-4 text-blue-500" />
       <span className="ml-1 font-semibold text-lg text-black dark:text-white">
-        {price === 0 ? "Free" : `$${price}`}
+        {price === 0 ? "Free" : `₹${price}`}
       </span>
       {estimatedPrice > price && (
         <span className="ml-2 text-sm text-gray-500 dark:text-gray-400 line-through">
-          ${estimatedPrice}
+          ₹{estimatedPrice}
         </span>
       )}
     </div>
