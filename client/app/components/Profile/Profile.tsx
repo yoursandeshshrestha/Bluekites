@@ -80,7 +80,7 @@ const Profile: FC<Props> = ({ user }) => {
                   No Courses Found
                 </h2>
                 <p className="mt-2 text-gray-600 dark:text-gray-300">
-                  You haven't enrolled in any courses yet.
+                  You haven&apos;t enrolled in any courses yet.
                 </p>
               </div>
             )}
