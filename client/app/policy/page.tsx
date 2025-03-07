@@ -2,8 +2,9 @@
 import React, { useState } from "react";
 import Heading from "../utils/Heading";
 import Header from "../components/Header";
-import Policy from "./Policy";
+
 import Footer from "../components/Footer";
+import ComprehensivePolicy from "./Policy";
 
 type Props = {};
 
@@ -26,7 +27,7 @@ const Page = (props: Props) => {
         setRoute={setRoute}
         route={route}
       />
-      <Policy />
+      <ComprehensivePolicy />
       <Footer />
     </div>
   );

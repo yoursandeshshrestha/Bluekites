@@ -25,7 +25,7 @@ const CustomAlert = ({ title, description }: any) => (
   </div>
 );
 
-const ComprehensivePolicy = () => {
+export const ComprehensivePolicy = () => {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const policySections = [
