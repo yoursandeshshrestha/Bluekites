@@ -89,7 +89,7 @@ const Footer = () => {
                 </FooterLink>
               </li>
               <li>
-                <FooterLink href="/privacy-policy">
+                <FooterLink href="/policy">
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Privacy Policy
                 </FooterLink>
