@@ -25,6 +25,11 @@ const josefin = Josefin_Sans({
   variable: "--font-Josefin",
 });
 
+export const metadata: Metadata = {
+  title: "Bluekites",
+  description: "Education Platform",
+};
+
 export default function RootLayout({
   children,
 }: {
