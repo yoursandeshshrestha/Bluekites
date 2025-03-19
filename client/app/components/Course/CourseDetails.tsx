@@ -2,19 +2,17 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { format } from "timeago.js";
-import { Elements } from "@stripe/react-stripe-js";
 import {
   IoMdCheckmarkCircleOutline,
   IoMdCloseCircleOutline,
 } from "react-icons/io";
 import { VscVerifiedFilled } from "react-icons/vsc";
-import { Stripe } from "@stripe/stripe-js";
 
 import { styles } from "@/app/styles/styles";
 import CoursePlayer from "@/app/utils/CoursePlayer";
 import Ratings from "@/app/utils/Ratings";
 import ContentCourseList from "./ContentCourseList";
-import CheckOutForm from "../Payment/CheckOutForm";
+import RazorpayCheckout from "../Payment/RazorpayCheckout";
 import { useLoadUserQuery } from "@/redux/features/api/apiSlice";
 import defaultImage from "../../../public/assets/avatar.jpg";
 
@@ -27,6 +25,7 @@ interface UserCourse {
 interface User {
   _id: string;
   name: string;
+  email: string;
   avatar?: {
     url: string;
   };
@@ -88,8 +87,7 @@ interface Course {
 
 interface CourseDetailsProps {
   data: Course;
-  clientSecret: string;
-  stripePromise: Promise<Stripe | null>;
+  razorpayKeyId: string;
   setRoute: (route: string) => void;
   setOpen: (open: boolean) => void;
 }
@@ -105,8 +103,7 @@ const formatPrice = (price: number): string => {
 
 const CourseDetails: React.FC<CourseDetailsProps> = ({
   data,
-  clientSecret,
-  stripePromise,
+  razorpayKeyId,
   setRoute,
   setOpen: openAuthModal,
 }) => {
@@ -337,8 +334,8 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({
       </div>
 
       {checkoutOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-lg">
             <div className="flex justify-end">
               <button
                 onClick={() => setCheckoutOpen(false)}
@@ -347,15 +344,12 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({
                 <IoMdCloseCircleOutline size={30} />
               </button>
             </div>
-            {stripePromise && clientSecret && (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <CheckOutForm
-                  setOpen={setCheckoutOpen}
-                  data={data}
-                  user={user}
-                />
-              </Elements>
-            )}
+            <RazorpayCheckout
+              setOpen={setCheckoutOpen}
+              data={data}
+              user={user}
+              razorpayKeyId={razorpayKeyId}
+            />
           </div>
         </div>
       )}
