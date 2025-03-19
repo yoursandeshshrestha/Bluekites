@@ -9,10 +9,26 @@ import sendMail from "../utils/sendMail";
 import path from "path";
 import ejs from "ejs";
 import NotificationModel from "../models/notification.model";
-import { getAllCoursesService } from "../services/course.service";
 import { redis } from "../utils/redis";
 require("dotenv").config();
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+// import crypto from "crypto";
+const Razorpay = require("razorpay");
+
+// Check for Razorpay configuration
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+
+if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+  console.error(
+    "WARNING: Razorpay credentials not found in environment variables!"
+  );
+}
+
+// Initialize Razorpay
+const razorpay = new Razorpay({
+  key_id: RAZORPAY_KEY_ID || "",
+  key_secret: RAZORPAY_KEY_SECRET || "",
+});
 
 // create order
 export const createOrder = CatchAsyncError(
@@ -20,16 +36,36 @@ export const createOrder = CatchAsyncError(
     try {
       const { courseId, payment_info } = req.body as IOrder;
 
+      // Verify Razorpay payment
       if (payment_info) {
-        if ("id" in payment_info) {
-          const paymentIntentId = payment_info.id;
-          const paymentIntent = await stripe.paymentIntents.retrieve(
-            paymentIntentId
-          );
-
-          if (paymentIntent.status !== "succeeded") {
-            return next(new ErrorHandler("Payment not authorized!", 400));
+        if (
+          "razorpay_payment_id" in payment_info &&
+          "razorpay_order_id" in payment_info &&
+          "razorpay_signature" in payment_info
+        ) {
+          // Get key secret
+          const keySecret = process.env.RAZORPAY_KEY_SECRET;
+          if (!keySecret) {
+            return next(
+              new ErrorHandler("Payment service configuration error", 500)
+            );
           }
+
+          // Verify the payment signature
+          const generated_signature = crypto
+            .createHmac("sha256", keySecret)
+            .update(
+              payment_info.razorpay_order_id +
+                "|" +
+                payment_info.razorpay_payment_id
+            )
+            .digest("hex");
+
+          if (generated_signature !== payment_info.razorpay_signature) {
+            return next(new ErrorHandler("Payment verification failed!", 400));
+          }
+        } else {
+          return next(new ErrorHandler("Payment information incomplete", 400));
         }
       }
 
@@ -122,34 +158,130 @@ export const getAllOrders = CatchAsyncError(
   }
 );
 
-// sent stripe publishie key
-export const sendStripePublshableKey = CatchAsyncError(
+// send Razorpay key id
+export const sendRazorpayKeyId = CatchAsyncError(
   async (req: Request, res: Response) => {
     res.status(200).json({
-      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+      keyId: process.env.RAZORPAY_KEY_ID,
     });
   }
 );
 
-//ney payment
-export const newPayment = CatchAsyncError(
+// create Razorpay order
+export const createRazorpayOrder = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const myPayment = await stripe.paymentIntents.create({
-        amount: req.body.amount,
-        currency: "USD",
-        metadata: {
-          company: "E-Learning",
-        },
-        automatic_payment_methods: {
-          enabled: true,
-        },
-      });
+      const {
+        amount,
+        currency = "INR",
+        receipt = "receipt_order_" + Date.now(),
+      } = req.body;
+
+      // Check if amount is already in paise
+      // If amount is less than 100, assume it's already in rupees and convert to paise
+      const amountInPaise = amount < 100 ? Math.round(amount * 100) : amount;
+
+      const options = {
+        amount: amountInPaise,
+        currency,
+        receipt,
+        payment_capture: 1, // Auto-capture enabled
+      };
+
+      console.log("Creating Razorpay order with options:", options);
+      const order = await razorpay.orders.create(options);
+      console.log("Razorpay order created:", order);
 
       res.status(200).json({
         success: true,
-        client_secret: myPayment.client_secret,
+        order,
       });
-    } catch (error: any) {}
+    } catch (error: any) {
+      console.error("Razorpay order creation failed:", error);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  }
+);
+
+// Import crypto for signature verification
+import crypto from "crypto";
+
+// Verify Razorpay payment
+export const verifyRazorpayPayment = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+        req.body;
+
+      // Validate required params
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return next(
+          new ErrorHandler(
+            "Missing required payment verification parameters",
+            400
+          )
+        );
+      }
+
+      // Validate that RAZORPAY_KEY_SECRET is available
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      if (!keySecret) {
+        console.error(
+          "RAZORPAY_KEY_SECRET is not defined in environment variables"
+        );
+        return next(
+          new ErrorHandler("Payment service configuration error", 500)
+        );
+      }
+
+      console.log("Verifying payment with details:", {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+      });
+
+      // Generate signature for verification
+      const generated_signature = crypto
+        .createHmac("sha256", keySecret)
+        .update(razorpay_order_id + "|" + razorpay_payment_id)
+        .digest("hex");
+
+      console.log("Generated signature:", generated_signature);
+      console.log("Received signature:", razorpay_signature);
+
+      if (generated_signature === razorpay_signature) {
+        // Fetch payment details from Razorpay for double validation
+        const payment = await razorpay.payments.fetch(razorpay_payment_id);
+
+        if (payment.status === "captured") {
+          console.log("Payment verified successfully:", payment);
+          res.status(200).json({
+            success: true,
+            message: "Payment verified successfully",
+            payment: {
+              id: payment.id,
+              amount: payment.amount,
+              status: payment.status,
+            },
+          });
+        } else {
+          console.error("Payment not captured:", payment);
+          return next(
+            new ErrorHandler(
+              `Payment not captured. Status: ${payment.status}`,
+              400
+            )
+          );
+        }
+      } else {
+        console.error("Signature verification failed");
+        return next(
+          new ErrorHandler("Payment signature verification failed", 400)
+        );
+      }
+    } catch (error: any) {
+      console.error("Payment verification error:", error);
+      return next(new ErrorHandler(error.message, 500));
+    }
   }
 );
