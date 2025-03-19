@@ -31,13 +31,22 @@ const razorpay = new Razorpay({
 });
 
 // create order
+// create order
 export const createOrder = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { courseId, payment_info } = req.body as IOrder;
 
-      // Verify Razorpay payment
-      if (payment_info) {
+      // Check if course exists and get its price
+      const course: ICourse | null = await CourseModel.findById(courseId);
+
+      if (!course) {
+        return next(new ErrorHandler("Course not found", 404));
+      }
+
+      // Handle payment verification for paid courses
+      if (course.price > 0 && payment_info) {
+        // Check if it's a Razorpay payment
         if (
           "razorpay_payment_id" in payment_info &&
           "razorpay_order_id" in payment_info &&
@@ -64,11 +73,14 @@ export const createOrder = CatchAsyncError(
           if (generated_signature !== payment_info.razorpay_signature) {
             return next(new ErrorHandler("Payment verification failed!", 400));
           }
-        } else {
+        }
+        // Handle free course or other payment types
+        else if (!("type" in payment_info) || payment_info.type !== "free") {
           return next(new ErrorHandler("Payment information incomplete", 400));
         }
       }
 
+      // Check if user already has the course
       const user = await userModel.findById(req.user?._id);
 
       const courseExistsInUser = user?.courses.some(
@@ -81,18 +93,7 @@ export const createOrder = CatchAsyncError(
         );
       }
 
-      const course: ICourse | null = await CourseModel.findById(courseId);
-
-      if (!course) {
-        return next(new ErrorHandler("Course not found", 404));
-      }
-
-      const data: any = {
-        courseId: course._id,
-        userId: user?._id,
-        payment_info,
-      };
-
+      // Create email data for order confirmation
       const mailData = {
         order: {
           _id: course._id.toString().slice(0, 6),
@@ -124,24 +125,85 @@ export const createOrder = CatchAsyncError(
         return next(new ErrorHandler(error.message, 500));
       }
 
+      // Add course to user's courses
       user?.courses.push(course?._id);
 
       await redis.set(req.user?._id, JSON.stringify(user));
 
       await user?.save();
 
+      // Create notification
       await NotificationModel.create({
         user: user?._id,
         title: "New Order",
         message: `You have a new order from ${course?.name}`,
       });
 
+      // Update course purchase count
       course.purchased += 1;
-
       await course.save();
+
+      // Create the order
+      const data: any = {
+        courseId: course._id,
+        userId: user?._id,
+        payment_info,
+      };
 
       newOrder(data, res, next);
     } catch (error: any) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  }
+);
+
+// create Razorpay order
+export const createRazorpayOrder = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const {
+        amount,
+        currency = "INR",
+        receipt = "receipt_order_" + Date.now(),
+      } = req.body;
+
+      // Check if this is a free course (amount = 0)
+      if (amount <= 0) {
+        return next(new ErrorHandler("Invalid amount for payment", 400));
+      }
+
+      // Check if amount is already in paise
+      // If amount is less than 100, assume it's already in rupees and convert to paise
+      const amountInPaise = amount < 100 ? Math.round(amount * 100) : amount;
+
+      const options = {
+        amount: amountInPaise,
+        currency,
+        receipt,
+        payment_capture: 1, // Auto-capture enabled
+      };
+
+      console.log("Creating Razorpay order with options:", options);
+
+      try {
+        const order = await razorpay.orders.create(options);
+        console.log("Razorpay order created:", order);
+
+        res.status(200).json({
+          success: true,
+          order,
+        });
+      } catch (razorpayError: any) {
+        console.error("Razorpay API error:", razorpayError);
+        return next(
+          new ErrorHandler(
+            `Razorpay API error: ${razorpayError.message || "Unknown error"}`,
+            500
+          )
+        );
+      }
+    } catch (error: any) {
+      console.error("Order creation error:", error);
       return next(new ErrorHandler(error.message, 500));
     }
   }
@@ -164,42 +226,6 @@ export const sendRazorpayKeyId = CatchAsyncError(
     res.status(200).json({
       keyId: process.env.RAZORPAY_KEY_ID,
     });
-  }
-);
-
-// create Razorpay order
-export const createRazorpayOrder = CatchAsyncError(
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const {
-        amount,
-        currency = "INR",
-        receipt = "receipt_order_" + Date.now(),
-      } = req.body;
-
-      // Check if amount is already in paise
-      // If amount is less than 100, assume it's already in rupees and convert to paise
-      const amountInPaise = amount < 100 ? Math.round(amount * 100) : amount;
-
-      const options = {
-        amount: amountInPaise,
-        currency,
-        receipt,
-        payment_capture: 1, // Auto-capture enabled
-      };
-
-      console.log("Creating Razorpay order with options:", options);
-      const order = await razorpay.orders.create(options);
-      console.log("Razorpay order created:", order);
-
-      res.status(200).json({
-        success: true,
-        order,
-      });
-    } catch (error: any) {
-      console.error("Razorpay order creation failed:", error);
-      return next(new ErrorHandler(error.message, 500));
-    }
   }
 );
 
