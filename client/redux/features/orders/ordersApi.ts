@@ -1,6 +1,6 @@
 import { apiSlice } from "../api/apiSlice";
 
-export const courseApi = apiSlice.injectEndpoints({
+export const orderApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAllOrders: builder.query({
       query: (type) => ({
@@ -9,23 +9,34 @@ export const courseApi = apiSlice.injectEndpoints({
         credentials: "include" as const,
       }),
     }),
-    getStripePublishableKey: builder.query({
+
+    // Replace Stripe with Razorpay endpoints
+    getRazorpayKey: builder.query({
       query: () => ({
-        url: `payment/stripepublisahblekey`,
+        url: `payment/razorpay-key`,
         method: "GET",
         credentials: "include" as const,
       }),
     }),
-    createPaymentIntent: builder.mutation({
-      query: (amount) => ({
-        url: `payment`,
+
+    createRazorpayOrder: builder.mutation({
+      query: (data) => ({
+        url: `payment/create-razorpay-order`,
         method: "POST",
-        body: {
-          amount,
-        },
+        body: data,
         credentials: "include" as const,
       }),
     }),
+
+    verifyPayment: builder.mutation({
+      query: (data) => ({
+        url: `payment/verify`,
+        method: "POST",
+        body: data,
+        credentials: "include" as const,
+      }),
+    }),
+
     createOrder: builder.mutation({
       query: ({ courseId, payment_info }) => ({
         url: `create-order`,
@@ -42,7 +53,8 @@ export const courseApi = apiSlice.injectEndpoints({
 
 export const {
   useGetAllOrdersQuery,
-  useGetStripePublishableKeyQuery,
-  useCreatePaymentIntentMutation,
+  useGetRazorpayKeyQuery,
+  useCreateRazorpayOrderMutation,
+  useVerifyPaymentMutation,
   useCreateOrderMutation,
-} = courseApi;
+} = orderApi;
